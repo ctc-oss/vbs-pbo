@@ -1,0 +1,9 @@
+/.metadata/
+**/target
+**/.settings/
+**/test-output/
+**/.classpath
+**/.project
+**/pom.xml.releaseBackup
+**/release.properties
+**/coverage-report/
