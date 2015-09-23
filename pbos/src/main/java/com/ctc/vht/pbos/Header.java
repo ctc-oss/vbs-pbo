@@ -7,6 +7,7 @@ import java.util.Collection;
 import java.util.List;
 
 import com.google.common.base.Optional;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.io.ByteProcessor;
 import com.google.common.io.ByteSink;
@@ -21,7 +22,7 @@ class Header {
 	/**
 	 * the filename \0 + 20; the 20 bytes are packaging, original size, reserved, timestamp, file size
 	 */
-	private static final int emptyHeaderSize = 21;
+	static final int emptyHeaderSize = 21;
 
 	private final String filename;
 	private final boolean compressed = false;
@@ -35,7 +36,6 @@ class Header {
 
 	/**
 	 * create a {@link ByteProcessor} for reading header entries
-	 * @return
 	 */
 	public static ByteProcessor<List<Header>> processor() {
 		return new HeadersProcessor();
@@ -43,13 +43,28 @@ class Header {
 
 
 	/**
-	 * 
+	 * create a marking header (0 filename length)
+	 */
+	public static Header marker() {
+		return new Header();
+	}
+
+
+	/**
 	 * @param filename
 	 * @param dataSize
 	 */
 	Header(final String filename, final int dataSize) {
+		Preconditions.checkNotNull(filename);
+		Preconditions.checkArgument(!filename.isEmpty(), "empty filename");
 		this.filename = filename;
 		this.fileSize = dataSize;
+	}
+
+
+	private Header() {
+		this.filename = "";
+		this.fileSize = 0;
 	}
 
 

@@ -1,6 +1,8 @@
 package com.ctc.vht.pbos;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -24,6 +26,37 @@ import com.google.common.io.Files;
 public class Pbos {
 
 	/**
+	 * return an input stream for the specified file within the pbo
+	 * @param pbo
+	 * @param filename
+	 * @return
+	 * @throws Exception
+	 */
+	public static InputStream streamFileFrom(final Path pbo, final String filename)
+		throws Exception {
+
+		Preconditions.checkNotNull(pbo);
+		Preconditions.checkNotNull(filename);
+		Preconditions.checkArgument(!filename.isEmpty(), "empty filename");
+
+		final File file = pbo.toFile();
+		Preconditions.checkArgument(file.exists());
+
+		for (final Header header : Files.asByteSource(file).read(Header.processor())) {
+			if (filename.equals(header.getFilename())) {
+				try (final InputStream is = Files.asByteSource(file).openBufferedStream()) {
+					final ByteBuffer buffer = ByteBuffer.allocate(header.getFileSize());
+					is.skip(header.getFileOffset());
+					is.read(buffer.array(), 0, header.getFileSize());
+					return new ByteArrayInputStream(buffer.array());
+				}
+			}
+		}
+		throw new FileNotFoundException(String.format("file[%s] not found in pbo[%s]", filename, pbo));
+	}
+
+
+	/**
 	 * unpack the pbo at the specified path to the specified path
 	 * @param source input pbo
 	 * @param target output directory
@@ -36,7 +69,7 @@ public class Pbos {
 		Preconditions.checkNotNull(target);
 
 		final File sourceFile = source.toFile();
-		Preconditions.checkArgument(sourceFile.exists());
+		Preconditions.checkArgument(sourceFile.exists(), "source[%s] doesnt exist", sourceFile);
 
 		final File targetDirectory = target.toFile();
 		Preconditions.checkArgument(!targetDirectory.exists() || targetDirectory.isDirectory(), "target is not a directory; %s", targetDirectory);
@@ -61,8 +94,8 @@ public class Pbos {
 		Preconditions.checkNotNull(target);
 
 		final File sourceDirectory = source.toFile();
-		Preconditions.checkArgument(sourceDirectory.exists());
-		Preconditions.checkArgument(sourceDirectory.isDirectory());
+		Preconditions.checkArgument(sourceDirectory.exists(), "source[%s] doesnt exist", sourceDirectory);
+		Preconditions.checkArgument(sourceDirectory.isDirectory(), "source[%s] is not a directory", sourceDirectory);
 
 		final File targetFile = target.toFile();
 		Preconditions.checkArgument(!targetFile.exists(), "target file already exists; %s", targetFile);
